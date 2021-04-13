@@ -1,6 +1,6 @@
 import speech_recognition as sr # recognise speech
 import playsound # to play an audio file
-from gtts import gTTS # google text to speech
+import gtts # google text to speech
 import random
 from time import ctime # get time details
 import webbrowser # open browser
@@ -12,10 +12,12 @@ import pyttsx3
 import bs4 as bs
 import urllib.request
 import requests
+from time import sleep
 
 
 CWD = os.path.dirname(os.path.realpath(__file__))
 AUDIO_PATH = os.path.join(CWD, "audio")
+print(gtts.lang.tts_langs())
 
 class person:
 	name = ''
@@ -48,7 +50,7 @@ def record_audio(ask=""):
 		try:
 			voice_data = r.recognize_google(audio)  # convert audio to text
 		except sr.UnknownValueError: # error: recognizer does not understand
-			engine_speak('I did not get that')
+			engine_speak('I did not get that.')
 		except sr.RequestError:
 			engine_speak('Sorry, the service is down') # error: recognizer is not connected
 		print(">>", voice_data.lower()) # print what user said
@@ -56,15 +58,14 @@ def record_audio(ask=""):
 
 # get string and make a audio file to be played
 def engine_speak(audio_string):
-	audio_string = str(audio_string)
-	tts = gTTS(text=audio_string, lang='en') # text to speech(voice)
+	tts = gtts.gTTS(text=audio_string, lang='en',tld='ae') # text to speech(voice)
 	r = random.randint(1,20000000)
 	audio_file = os.path.join(AUDIO_PATH, ('audio_' + str(r) + '.mp3'))
 	print(audio_file)
 	tts.save(audio_file) # save as mp3
 	playsound.playsound(audio_file) # play the audio file
 	print(asis_obj.name + ":", audio_string) # print what app said
-	os.remove(audio_file) # remove audio file
+	#os.remove(audio_file) # remove audio file
 
 def respond(voice_data):
 	# 1: greeting
@@ -243,18 +244,14 @@ def respond(voice_data):
 		webbrowser.get().open(url)
 		engine_speak("You must be somewhere near here, as per Google maps")    
 
-
-
-time.sleep(1)
-
 person_obj = person()
 asis_obj = asis()
 asis_obj.name = 'kiki'
 person_obj.name = ""
-engine = pyttsx3.init()
 
 
 while(1):
+	input("Respond? ")
 	voice_data = record_audio("Recording") # get the voice input
 	print("Done")
 	print("Q:", voice_data)
