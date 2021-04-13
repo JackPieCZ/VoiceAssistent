@@ -22,7 +22,6 @@ import pyautogui #screenshot
 import bs4 as bs
 import urllib.request
 import requests
-from time import sleep
 
 CWD = os.path.dirname(os.path.realpath(__file__))       # current folder
 EMOJI_PATH = os.path.join(CWD, "emojis")				# emojis folder
