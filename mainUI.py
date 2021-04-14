@@ -80,6 +80,7 @@ class GUI_Instance(QWidget):
 		deleteCache(AUDIO_PATH)			# odstranit cache
 
 	def UI(self):	# uživatelské rozhraní
+		self.groupBox = QGroupBox(self)
 		gridLayout = QGridLayout()
 
 		self.emoji = QLabel(self)
@@ -100,6 +101,9 @@ class GUI_Instance(QWidget):
 		self.recordButton = QPushButton()
 		#self.recordButton.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
 		self.recordButton.setText("Record")
+		self.recordButton.setStyleSheet(
+			"color: rgb(219,35,35);"
+			"border-color: rgb(219,35,35);")
 		self.recordButton.clicked.connect(self.record)
 		gridLayout.addWidget(self.recordButton,4,0,1,1)
 
@@ -117,17 +121,14 @@ class GUI_Instance(QWidget):
 		self.exitButton.clicked.connect(self.exitProgram)
 		gridLayout.addWidget(self.exitButton,6,0,1,1)
 
-		self.setLayout(gridLayout)
+
+		self.groupBox.setLayout(gridLayout)
+		self.groupBox.setStyleSheet("background-color: rgb(10,10,10)")
+		self.vbox = QVBoxLayout()
+		self.vbox.addWidget(self.groupBox)
+		self.setLayout(self.vbox)
 		self.setWindowTitle("Voice Assistant")
 		self.show()
-
-		self.timer = QTimer(self)
-		self.timer.setInterval(3000)
-		self.timer.timeout.connect(self.setRandomEmoji)
-		#self.timer.start()
-	
-	def setRandomEmoji(self):
-		self.setEmoji(random.choice(emojis))
 	
 	def setEmoji(self,emotion):
 		self.gif = QMovie(os.path.join(EMOJI_PATH, str(emotion)+".gif"))
@@ -142,7 +143,6 @@ class GUI_Instance(QWidget):
 			self.outputLabel.setText("Asistant >> "+ output_string)
 		if output_string == "I did not get that.":
 			self.setEmoji("shocked")
-			QTimer.singleShot(3250, lambda: self.setEmoji("excitied"))
 		
 	
 	def resetVisibilities(self):
@@ -172,9 +172,11 @@ class GUI_Instance(QWidget):
 		self.setEmoji("dancing")
 		self.inputLabel.clear()
 		self.outputLabel.clear()
+		#print(self.size())
 	
 	def exitProgram(self):
 		self.input_signal.emit("bye")
+		self.setEmoji("yes")
 		QTimer.singleShot(2000, lambda: self.close())
 
 class VoiceProcessing(QObject):
