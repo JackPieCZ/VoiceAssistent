@@ -11,6 +11,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QFont, QIcon, QMovie, QPixmap
 from PyQt5.QtCore import  QThread, pyqtSignal, pyqtSlot, Qt, QObject, QTimer
 import qt_material
+from threading import Thread
 
 # Libraries for different functions of voice assistant
 import random
@@ -33,7 +34,7 @@ emojis = [
 			"applause",
 			"dancing",
 			"deal_with_it",
-			"excited",
+			"excitied",
 			"lol",
 			"loving",
 			"no",
@@ -70,7 +71,7 @@ class GUI_Instance(QWidget):
 	def __init__(self):
 		super().__init__()
 		self.UI()
-		self.setMinimumSize(1280, 720)
+		#self.setMinimumSize(1280, 720)
 		self.move(435,120)
 		self.setupThread()
 	
@@ -84,7 +85,7 @@ class GUI_Instance(QWidget):
 		self.emoji = QLabel(self)
 		self.emoji.setAlignment(Qt.AlignCenter)
 		self.emoji.setFixedSize(480,480)
-		self.setEmoji("dancing")
+		self.setEmoji("excitied")
 		gridLayout.addWidget(self.emoji,1,0)
 
 		self.status = QLabel("Status")
@@ -101,6 +102,14 @@ class GUI_Instance(QWidget):
 		self.setLayout(gridLayout)
 		self.setWindowTitle("Voice Assistant")
 		self.show()
+
+		self.timer = QTimer(self)
+		self.timer.setInterval(3000)
+		self.timer.timeout.connect(self.setRandomEmoji)
+		self.timer.start()
+	
+	def setRandomEmoji(self):
+		self.setEmoji(random.choice(emojis))
 	
 	def setEmoji(self,emotion):
 		self.gif = QMovie(os.path.join(EMOJI_PATH, str(emotion)+".gif"))
@@ -131,16 +140,39 @@ class VoiceProcessing(QObject):
 			self.init()
 		elif command == "rec":
 			self.record()
+
 	def init(self):
-		r = sr.Recognizer() # initialise a recogniser
-		person_obj = User()
-		asis_obj = Asistant()
-		asis_obj.name = 'kiki'
-		person_obj.name = ""
+		self.r = sr.Recognizer() # initialise a recogniser
+		self.person_obj = User()
+		self.asis_obj = Asistant()
+		self.asis_obj.name = 'kiki'
+		self.person_obj.name = ""
 		print("initilized")
 
-	def record(self):
+	def record(self, ask=""):	# listen for audio and convert it to text:
 		print("recording")
+		with sr.Microphone() as source: # microphone as source
+			if ask:
+				self.engine_speak(ask)
+			audio = self.r.listen(source, 5, 5)  # listen for the audio for 5 secs
+			print("Done listening")
+			voice_data = ""
+			try:
+				voice_data = str(self.r.recognize_google(audio))
+			except sr.UnknownValueError: # recognizer didn't understand
+				self.engine_speak("I did not get that.")
+			except sr.RequestError: # recognizer is not connected
+				self.engine_speak("Sorry, the service is down. Try again later!")
+			if voice_data:
+				print("Your input >> ", voice_data.lower())
+				return voice_data.lower()
+	
+	def engine_speak(self, text_string):
+		tts = gtts.gTTS(text=text_string, lang='en', tld='ae') # text to speech(voice)
+		audio_file = os.path.join(AUDIO_PATH, ('audio_' + str(random.randint(1,200000)) + '.mp3'))
+		tts.save(audio_file)
+		playsound.playsound(audio_file)
+		print(self.asis_obj.name + " >> ", text_string)
 
 #######################################
 if __name__ == "__main__":
