@@ -100,7 +100,7 @@ def respond(voice_data):
 		engine_speak("I'm very well, thanks for asking " + person_obj.name)
 
 	# 4: time
-	if there_exists(["what's the time","tell me the time","what time is it","what is the time"]):
+	if there_exists(["what's the time","tell me the time","what time is it"]):
 		time = ctime().split(" ")[3].split(":")[0:2]
 		if time[0] == "00":
 			hours = '12'
@@ -131,7 +131,7 @@ def respond(voice_data):
 		webbrowser.get().open(url)
 		engine_speak("Here is what I found for " + search_term + "on youtube")
 
-	 #7: get stock price
+	#7: get stock price
 	if there_exists(["price of"]):
 		search_term = voice_data.split("for")[-1]
 		url = "https://google.com/search?q=" + search_term
@@ -148,7 +148,7 @@ def respond(voice_data):
 	 #9 weather
 	if there_exists(["weather"]):
 		search_term = voice_data.split("for")[-1]
-		url = "https://www.google.com/search?sxsrf=ACYBGNSQwMLDByBwdVFIUCbQqya-ET7AAA%3A1578847393212&ei=oUwbXtbXDN-C4-EP-5u82AE&q=weather&oq=weather&gs_l=psy-ab.3..35i39i285i70i256j0i67l4j0i131i67j0i131j0i67l2j0.1630.4591..5475...1.2..2.322.1659.9j5j0j1......0....1..gws-wiz.....10..0i71j35i39j35i362i39._5eSPD47bv8&ved=0ahUKEwiWrJvwwP7mAhVfwTgGHfsNDxsQ4dUDCAs&uact=5"
+		url = "https://www.google.com/search?q=weather"
 		webbrowser.get().open(url)
 		engine_speak("Here is what I found for on google")
 	 
@@ -161,7 +161,6 @@ def respond(voice_data):
 		cmove=random.choice(moves)
 		pmove=voice_data
 		
-
 		engine_speak("The computer chose " + cmove)
 		engine_speak("You chose " + pmove)
 		#engine_speak("hi")
