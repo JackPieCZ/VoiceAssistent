@@ -157,7 +157,6 @@ class GUI_Instance(QWidget):
 
 	def record(self):
 		self.input_signal.emit(1)
-		self.setEmoji(emojis[101])
 		self.recordButton.setVisible(False)
 		self.exitButton.setDisabled(True)
 		self.inputLabel.setVisible(False)
@@ -251,7 +250,7 @@ class VoiceProcessing(QObject):
 				self.output_signal.emit("","",1)
 		elif any(string in voice_data for string in ["my name is"]):
 			person_name = voice_data.split("is")[-1].strip().capitalize()
-			self.engine_speak(f"Okay, i will remember that, {person_name}.",109)
+			self.engine_speak(f"Okay, nice to meet you, {person_name}.",109)
 			self.person_obj.setName(person_name) # remember name in person object
 		
 		elif any(string in voice_data for string in ["what is my name","what's my name"]):
@@ -264,7 +263,7 @@ class VoiceProcessing(QObject):
 		
 		# 2: greeting
 		elif any(string in voice_data for string in ["how are you","how are you doing"]):
-			self.engine_speak(f"I'm very well, thanks for asking, {self.person_obj.name}.", 101)
+			self.engine_speak(f"I'm very well, thanks for asking, {self.person_obj.name}.", 104)
 		
 		# 3: time
 		elif any(string in voice_data for string in ["what's the time","tell me the time","what time is it","what's the current time"]):
@@ -311,21 +310,21 @@ class VoiceProcessing(QObject):
 			pmove = voice_data.split("choose")[-1].strip().lower()
 			cmove = random.choice(["rock","paper","scissors"])
 			print(cmove, pmove)
-			self.engine_speak(f"Computer chosed {cmove}.",threading=False)
+			self.engine_speak(f"I choose {cmove}",threading=False)
 			if pmove==cmove:
 				self.engine_speak("The match is draw",104)
 			elif pmove == "rock" and cmove == "scissors":
-				self.engine_speak("Player wins",100)
+				self.engine_speak("Congratulations! You won!",100)
 			elif pmove== "rock" and cmove== "paper":
-				self.engine_speak("Computer wins",102)
+				self.engine_speak("Ha! I won!",102)
 			elif pmove== "paper" and cmove== "rock":
-				self.engine_speak("Player wins",100)
+				self.engine_speak("Congratulations! You won!",100)
 			elif pmove== "paper" and cmove== "scissors":
-				self.engine_speak("Computer wins",102)
+				self.engine_speak("Ha! I won!",102)
 			elif pmove== "scissors" and cmove== "paper":
-				self.engine_speak("Player wins",100)
+				self.engine_speak("Congratulations! You won!",100)
 			elif pmove== "scissors" and cmove== "rock":
-				self.engine_speak("Computer wins",102)
+				self.engine_speak("Ha! I won!",102)
 		
 		#8: toss a coin
 		elif any(string in voice_data for string in ["toss","flip","coin"]):
@@ -341,7 +340,7 @@ class VoiceProcessing(QObject):
 				else:
 					separator += 1
 			task = str(''.join(map(str,(voice_data.split()[separator:]))))
-			task = task.replace("x","*")
+			task = task.replace("x","*").replace("million","000000").replace("billion","000000000")
 			try:
 				answer = eval(task)
 				self.engine_speak(f"The answer is {answer}.", 109)
