@@ -6,7 +6,7 @@ import os # to remove created audio files
 import shutil
 import sys
 from PyQt5.QtWidgets import (
-	QMainWindow, QApplication, QWidget, QHBoxLayout, QVBoxLayout, QSpacerItem, QSizePolicy, QStackedWidget, QGroupBox,
+	QApplication, QWidget, QHBoxLayout, QVBoxLayout, QSpacerItem, QSizePolicy, QStackedWidget, QGroupBox,
 	QGridLayout, QLabel, QToolButton, QPushButton)
 from PyQt5.QtGui import QFont, QIcon, QMovie, QPixmap
 from PyQt5.QtCore import  QThread, pyqtSignal, pyqtSlot, Qt, QObject, QTimer, QSize
@@ -17,11 +17,6 @@ from threading import Thread
 import random
 from time import ctime # get time details
 import webbrowser # open browser
-import time
-from PIL import Image
-import pyautogui #screenshot
-import bs4 as bs
-import urllib.request
 import requests
 
 CWD = os.path.dirname(os.path.realpath(__file__))       # current folder
@@ -140,6 +135,8 @@ class GUI_Instance(QWidget):
 			self.resetVisibilities()
 		if emoji_int >= 100:
 			self.setEmoji(emojis[emoji_int])
+		if emoji_int == 1:
+			QTimer.singleShot(3000, lambda:self.continueRecording())
 		
 	def resetVisibilities(self):
 		self.listeningGif.setVisible(False)
@@ -169,6 +166,15 @@ class GUI_Instance(QWidget):
 		self.inputLabel.clear()
 		self.outputLabel.clear()
 	
+	def continueRecording(self):
+		self.input_signal.emit(1)
+		self.setEmoji(emojis[108])
+		self.recordButton.setVisible(False)
+		self.exitButton.setDisabled(True)
+		self.inputLabel.setVisible(False)
+		self.listeningGif.setVisible(True)
+		self.inputLabel.clear()
+	
 	def exitProgram(self):
 		self.input_signal.emit(99)
 		self.inputLabel.clear()
@@ -182,7 +188,7 @@ class VoiceProcessing(QObject):
 		if command == 0:
 			self.init()
 		elif command == 1:
-			self.record()
+			self.get_input()
 		elif command == 99:
 			self.engine_speak("Good bye "+self.person_obj.name+"!",109)
 		else:
@@ -195,12 +201,17 @@ class VoiceProcessing(QObject):
 		self.asis_obj.name = "Qwerty"
 		self.person_obj.name = ""
 		print("initilized")
+	
+	def get_input(self,ask=""):
+		user_input = self.record(ask)
+		self.respond(user_input)
 
 	def record(self, ask=""):	# listen for audio and convert it to text:
 		print("recording")
 		with sr.Microphone() as source: # microphone as source
 			if ask:
-				Thread(target=self.engine_speak, args=([ask],0)).start()
+				self.output_signal.emit("","",1)
+				self.engine_speak(ask,threading=False)
 			self.playSound(os.path.join(AUDIO_PATH, 'Recording.wav'))
 			audio = self.r.listen(source, 5, 5)  # listen for the audio for 5 secs
 			self.output_signal.emit("","",108)
@@ -214,18 +225,21 @@ class VoiceProcessing(QObject):
 			if voice_data:
 				print("Your input >> ", voice_data.lower())
 				self.output_signal.emit(voice_data.capitalize(),"",0)
-				self.respond(voice_data.lower())
+			return voice_data.lower()
 	
-	def engine_speak(self, text_string, emoji_int):
+	def engine_speak(self, text_string, emoji_int=0, threading=True):
 		tts = gtts.gTTS(text=(text_string), lang='en', tld='ae') # text to speech(voice)
 		audio_file = os.path.join(CACHE_PATH, ('audio_' + str(random.randint(1,200000)) + '.mp3'))
 		tts.save(audio_file)
-		self.playSound(audio_file)
 		self.output_signal.emit("", text_string,emoji_int)
+		self.playSound(audio_file,threading)
 		print(self.asis_obj.name + " >> ", text_string)
 	
-	def playSound(self, audio_file):
-		Thread(target=playsound.playsound, args=[audio_file]).start()
+	def playSound(self, audio_file, threading=True):
+		if threading is True:
+			Thread(target=playsound.playsound, args=[audio_file]).start()
+		else:
+			playsound.playsound(audio_file)
 	
 	def respond(self, voice_data):
 		#1: name
@@ -234,6 +248,7 @@ class VoiceProcessing(QObject):
 				self.engine_speak(f"My name is {self.asis_obj.name}, {self.person_obj.name}.",104) #gets users name from voice input
 			else:
 				self.engine_speak(f"My name is {self.asis_obj.name}. What's your name?",104) #incase you haven't provided your name.
+				self.output_signal.emit("","",1)
 		elif any(string in voice_data for string in ["my name is"]):
 			person_name = voice_data.split("is")[-1].strip().capitalize()
 			self.engine_speak(f"Okay, i will remember that, {person_name}.",109)
@@ -249,7 +264,7 @@ class VoiceProcessing(QObject):
 		
 		# 2: greeting
 		elif any(string in voice_data for string in ["how are you","how are you doing"]):
-			self.engine_speak(f"I'm very well, thanks for asking {self.person_obj.name}.", 101)
+			self.engine_speak(f"I'm very well, thanks for asking, {self.person_obj.name}.", 101)
 		
 		# 3: time
 		elif any(string in voice_data for string in ["what's the time","tell me the time","what time is it","what's the current time"]):
@@ -259,6 +274,10 @@ class VoiceProcessing(QObject):
 			else:
 				hours = current_time[0]
 			minutes = current_time[1]
+			if hours[0] == "0":
+				hours = hours[1]
+			if minutes[0] == "0":
+				minutes = minutes[1]
 			current_time = hours + " hours and " + minutes + " minutes"
 			self.engine_speak(f"It's {current_time}.",109)
 		
@@ -274,7 +293,7 @@ class VoiceProcessing(QObject):
 			search_term = (voice_data.split("for")[-1])[1:]
 			url = "https://www.google.com/search?q=weather "+(search_term)
 			webbrowser.get().open(url)
-			self.engine_speak(f"Here's the current forcast for {search_term}.",107)
+			self.engine_speak(f"Here's the current forcast for {search_term.capitalize()}.",107)
 		
 		# 6: Current locations
 		elif any(string in voice_data for string in ["what is my exact location","my location", "where am i"]):
@@ -283,6 +302,51 @@ class VoiceProcessing(QObject):
 			Ip_info = requests.get('https://api.ipdata.co?api-key=193c911867c19a6f680be545035399aabae13e2c80ee868d5519beba').json()
 			self.engine_speak(f"You must be somewhere in {Ip_info['region']} in {Ip_info['country_name']}.",104) 
 
+		#7: stone paper scisorrs
+		elif any(string in voice_data for string in ["play a game","have fun","play again"]):
+			print("game")
+			self.engine_speak("Choose among rock, paper and scissors.")
+			self.output_signal.emit("","",1)
+		elif "i choose" in voice_data:
+			pmove = voice_data.split("choose")[-1].strip().lower()
+			cmove = random.choice(["rock","paper","scissors"])
+			print(cmove, pmove)
+			self.engine_speak(f"Computer chosed {cmove}.",threading=False)
+			if pmove==cmove:
+				self.engine_speak("The match is draw",104)
+			elif pmove == "rock" and cmove == "scissors":
+				self.engine_speak("Player wins",100)
+			elif pmove== "rock" and cmove== "paper":
+				self.engine_speak("Computer wins",102)
+			elif pmove== "paper" and cmove== "rock":
+				self.engine_speak("Player wins",100)
+			elif pmove== "paper" and cmove== "scissors":
+				self.engine_speak("Computer wins",102)
+			elif pmove== "scissors" and cmove== "paper":
+				self.engine_speak("Player wins",100)
+			elif pmove== "scissors" and cmove== "rock":
+				self.engine_speak("Computer wins",102)
+		
+		#8: toss a coin
+		elif any(string in voice_data for string in ["toss","flip","coin"]):
+			cmove = random.choice(["head","tails"])
+			self.engine_speak(f"The coin showed {cmove}.",104)
+		
+		#9: calculations
+		elif any(string in voice_data for string in ["plus","minus","multiply","divide","power","+","-","*","/"]):
+			separator = 0
+			for word in voice_data.split():
+				if word.isdigit():
+					break
+				else:
+					separator += 1
+			task = str(''.join(map(str,(voice_data.split()[separator:]))))
+			task = task.replace("x","*")
+			try:
+				answer = eval(task)
+				self.engine_speak(f"The answer is {answer}.", 109)
+			except ZeroDivisionError:
+				self.engine_speak("You can't devide by zero bro...",102)
 
 		# 97: search google
 		elif "search for" in voice_data and "youtube" not in voice_data:

@@ -212,7 +212,7 @@ def respond(voice_data):
 	if there_exists(["definition of"]):
 		definition=record_audio("what do you need the definition of")
 		url=urllib.request.urlopen('https://en.wikipedia.org/wiki/'+definition)
-		soup=bs.BeautifulSoup(url,'lxml')
+		soup=bs.BeautifulSoup(url,"html.parser")
 		definitions=[]
 		for paragraph in soup.find_all('p'):
 			definitions.append(str(paragraph.text))
@@ -224,7 +224,7 @@ def respond(voice_data):
 			else:
 				engine_speak ('Here is what i found '+definitions[2])
 		else:
-				engine_speak("im sorry i could not find the definition for "+definition)
+			engine_speak("im sorry i could not find the definition for "+definition)
 
 
 	if there_exists(["exit", "quit", "goodbye"]):
