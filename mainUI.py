@@ -100,7 +100,7 @@ class GUI_Instance(QWidget):
 
 		self.listeningGif = QLabel(self)
 		self.listeningGif.setAlignment(Qt.AlignCenter)
-		self.listeninggif = QMovie("listening.gif")
+		self.listeninggif = QMovie(os.path.join(EMOJI_PATH, "listening.gif"))
 		self.listeninggif.setScaledSize(QSize(200,150))
 		self.listeningGif.setMovie(self.listeninggif)
 		self.listeninggif.start()
@@ -157,6 +157,7 @@ class GUI_Instance(QWidget):
 
 	def record(self):
 		self.input_signal.emit(1)
+		self.setEmoji(emojis[103])
 		self.recordButton.setVisible(False)
 		self.exitButton.setDisabled(True)
 		self.inputLabel.setVisible(False)
@@ -203,7 +204,8 @@ class VoiceProcessing(QObject):
 	
 	def get_input(self,ask=""):
 		user_input = self.record(ask)
-		self.respond(user_input)
+		if '' != user_input:
+			self.respond(user_input)
 
 	def record(self, ask=""):	# listen for audio and convert it to text:
 		print("recording")
@@ -307,7 +309,7 @@ class VoiceProcessing(QObject):
 			self.engine_speak("Choose among rock, paper and scissors.")
 			self.output_signal.emit("","",1)
 		elif "i choose" in voice_data:
-			pmove = voice_data.split("choose")[-1].strip().lower()
+			pmove = voice_data.split()[2].strip().lower()
 			cmove = random.choice(["rock","paper","scissors"])
 			print(cmove, pmove)
 			self.engine_speak(f"I choose {cmove}",threading=False)
